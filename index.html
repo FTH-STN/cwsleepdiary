@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>刺猬的呼呼日记</title>
+    <link rel="shortcut icon" href="#">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body>div{
+            border:1px solid black;
+            width:80%;
+            margin:auto;
+        }
+        #scrolllist{
+            height:60vh;
+            margin-top:5vh;
+            overflow-y: scroll;
+        }
+        #comments{
+            height:25vh;
+            margin-top:3vh;
+            padding:0.5vh;
+        }
+        .svgCell{
+            width:98%;
+            margin:1%;
+            border:1px solid gray;
+        }
+    </style>
+</head>
+<body>
+    <div id="scrolllist"></div>
+    <div id="comments"></div>
+    <script>
+        const div=d3.select('#scrolllist');
+        let svg;
+
+        let timerResize;
+        d3.select(window).on("resize", function(){
+            clearTimeout(timerResize);
+            timerResize=setTimeout(Resize,500)
+        });
+
+
+        d3.csv('cw_sleep.csv').then(data=>{
+            console.log(data);
+            
+            svg=div.selectAll('.svgCell')
+                .data(data)
+                .join('svg')
+                .attr('class','svgCell')
+                .on('click',ShowComments);
+
+            Resize();
+
+        })
+
+        function ShowComments(e,obj){
+            d3.select('#comments')
+                .html(obj.date+'<br>'+obj.comments)
+        }
+
+        function Resize(){
+            const w=div.node().clientWidth;
+            const h=w*.98/10;
+
+            // svg.attr('height',w*.98/5)
+            svg.attr('viewBox',`0 0 ${w} ${h}`);
+
+            // const h=div.node().clientHeight;
+            // svg.attr('width',w).attr('height',h);
+            // x.range([0,w]);
+            // y.range([0,h]);
+            
+            // if(arrLayer.length){arrLayer.forEach(l=>{l.refresh()})};
+        }
+    </script>
+</body>
+</html>
