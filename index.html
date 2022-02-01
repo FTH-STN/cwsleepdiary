@@ -4,25 +4,37 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>刺猬的呼呼日记</title>
+    <title>🦔的呼呼日记</title>
     <link rel="shortcut icon" href="#">
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <style>
+        body{
+            /* background-image: url('bg/1.png'); */
+            background-color: rgba(255,255,255,0.6);
+            background-blend-mode: lighten;
+        }
         body>div{
             border:1px solid black;
             width:80%;
             margin:auto;
+            overflow-y: scroll;
         }
         #scrolllist{
             height:60vh;
             margin-top:5vh;
-            overflow-y: scroll;
         }
         #comments{
             height:25vh;
             margin-top:3vh;
             padding:0.5vh;
         }
+        /* #frame{
+            position: absolute;
+            width:77.4%;
+            height:60vh;
+            margin:.7%;
+            border:solid 2px red;
+        } */
         .svgCell{
             width:98%;
             margin:1%;
@@ -35,46 +47,114 @@
     <div id="comments"></div>
     <script>
         const div=d3.select('#scrolllist');
-        let svg;
 
-        let timerResize;
-        d3.select(window).on("resize", function(){
-            clearTimeout(timerResize);
-            timerResize=setTimeout(Resize,500)
-        });
+        // let timerResize;
+        // d3.select(window).on("resize", function(){
+        //     clearTimeout(timerResize);
+        //     timerResize=setTimeout(Resize,500)
+        // });
 
 
         d3.csv('cw_sleep.csv').then(data=>{
             console.log(data);
             
-            svg=div.selectAll('.svgCell')
+            const width = 1000, height = 100, margin = 10;
+            const xScale = d3.scaleLinear().range([200,750]).domain([0,12]);
+            const cScale = d3.scaleLinear().range(['#ed1b24','#ff7e00','#fef200','#23b14d']).domain([7,8,9,10]);
+            // const cScale = d3.scaleSequential(d3.interpolateRdYlGn);
+            const arc = t=>d3.arc()
+                .innerRadius(0)
+                .outerRadius(height*3/8)
+                .startAngle(0)
+                .endAngle(t*Math.PI/5);
+
+            // const frame=div.append('svg')
+            //     .attr('id','frame')
+            //     .attr('viewBox',`0 0 ${width} ${height}`)
+            //     .attr('preserveAspectRatio','none')
+            
+            const svg=div.selectAll('.svgCell')
                 .data(data)
                 .join('svg')
                 .attr('class','svgCell')
-                .on('click',ShowComments);
+                .attr('viewBox',`0 0 ${width} ${height}`)
+                .on('click',ShowComments)
+                .each(function(d){
+                    const cell = d3.select(this);
+                    const l = s2n(d.gotup)-s2n(d.sleep,true);
+                    // const c = 
 
-            Resize();
+                    cell.append('text')
+                        .text(d.date)
+                        .attr('transform',`translate(${margin},${height/2})`)
+                        .attr('alignment-baseline','middle')
+                        .attr('font-size','3em');
+
+                    if(d.sleep){
+                        cell.append('rect')
+                            .attr('x',xScale(s2n(d.sleep,true)))
+                            .attr('width',xScale(s2n(d.gotup))-xScale(s2n(d.sleep,true)))
+                            .attr('y',height/4)
+                            .attr('height',height/2)
+                            .attr('fill','steelblue');
+                            
+                        cell.append('path')
+                            .attr('transform',`translate(850,${height/2})`)
+                            .attr('d',arc(l))
+                            .attr('fill',cScale(Math.max(Math.min(l,10),6)))
+                            // .attr('stroke','black')
+                            .attr('fill-opacity',0.7)
+                    }else{
+                        cell.append('rect')
+                            .attr('x',0)
+                            .attr('width',width)
+                            .attr('y',0)
+                            .attr('height',height)
+                            .attr('fill','gray')
+                            .attr('fill-opacity',0.5)
+
+                        // cell.select('text')
+                        //     .attr('fill','gray')
+                    }
+
+                    if(d.wakeup){
+                        cell.selectAll('.lineWakeup')
+                            .data(d.wakeup.split(','))
+                            .join('g')
+                            .each(function(e,i){
+                                const g=d3.select(this);
+                                g.append('line')
+                                    .attr('x1',xScale(s2n(e)))
+                                    .attr('x2',xScale(s2n(e)))
+                                    .attr('y1',height/4-margin/2)
+                                    .attr('y2',height*3/4+margin/2)
+                                    .attr('stroke','orange')
+                                    .attr('stroke-width',margin/3);
+
+                                g.append('rect')
+                                    .attr('x',900+margin*2)
+                                    .attr('width',100-margin*4)
+                                    .attr('y',height*7/8-(i+1)*height/8)
+                                    .attr('height',height/8)
+                                    .attr('fill',cScale(10-i))
+                                    // .attr('stroke','gray')
+                            })
+                    }
+                });
 
         })
 
-        function ShowComments(e,obj){
-            d3.select('#comments')
-                .html(obj.date+'<br>'+obj.comments)
+        function s2n(str,overnight){
+            const arr=str.split(':');
+            let num=+arr[0]+(+arr[1]/60)+1;
+            num=+arr[0]>11?num-12:num;
+
+            return overnight && +arr[0]==11?num-12:num;
         }
 
-        function Resize(){
-            const w=div.node().clientWidth;
-            const h=w*.98/10;
-
-            // svg.attr('height',w*.98/5)
-            svg.attr('viewBox',`0 0 ${w} ${h}`);
-
-            // const h=div.node().clientHeight;
-            // svg.attr('width',w).attr('height',h);
-            // x.range([0,w]);
-            // y.range([0,h]);
-            
-            // if(arrLayer.length){arrLayer.forEach(l=>{l.refresh()})};
+        function ShowComments(e,obj){
+            d3.select('#comments')
+                .html(obj.date+'<br>睡了<b style="color:red;">'+(obj.sleep?(s2n(obj.gotup)-s2n(obj.sleep,true)).toFixed(2):' - ')+'</b>小时：'+obj.sleep+' - '+obj.gotup+'<br>惊醒<b style="color:red;">'+(obj.wakeup?obj.wakeup.split(',').length:' - ')+'</b>次：'+obj.wakeup.replaceAll(',','，')+'<br>随记：'+obj.comments)
         }
     </script>
 </body>
