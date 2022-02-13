@@ -47,19 +47,17 @@
     <div id="comments"></div>
     <script>
         const div=d3.select('#scrolllist');
-
-        // let timerResize;
-        // d3.select(window).on("resize", function(){
-        //     clearTimeout(timerResize);
-        //     timerResize=setTimeout(Resize,500)
-        // });
+        const w=['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
 
 
         d3.csv('cw_sleep.csv').then(data=>{
             console.log(data);
             
+            const min = d3.min(data.filter(x=>+x.sleep.split(':')[0]>6),x=>+x.sleep.split(':')[0]);
+            const max = d3.max(data,x=>+x.gotup.split(':')[0])
+
             const width = 1000, height = 100, margin = 10;
-            const xScale = d3.scaleLinear().range([200,750]).domain([0,12]);
+            const xScale = d3.scaleLinear().range([200,750]).domain([0,max-min+12]);
             const cScale = d3.scaleLinear().range(['#ed1b24','#ff7e00','#fef200','#23b14d']).domain([7,8,9,10]);
             // const cScale = d3.scaleSequential(d3.interpolateRdYlGn);
             const arc = t=>d3.arc()
@@ -67,11 +65,6 @@
                 .outerRadius(height*3/8)
                 .startAngle(0)
                 .endAngle(t*Math.PI/5);
-
-            // const frame=div.append('svg')
-            //     .attr('id','frame')
-            //     .attr('viewBox',`0 0 ${width} ${height}`)
-            //     .attr('preserveAspectRatio','none')
             
             const svg=div.selectAll('.svgCell')
                 .data(data)
@@ -81,29 +74,51 @@
                 .on('click',ShowComments)
                 .each(function(d){
                     const cell = d3.select(this);
+
                     const l = s2n(d.gotup)-s2n(d.sleep,true);
                     // const c = 
 
                     cell.append('text')
+                        .text(w[new Date(d.date+' 2022').getDay()])
+                        .attr('transform',`translate(${margin/2},${margin/2})`)
+                        .attr('alignment-baseline','hanging');
+                    cell.append('text')
                         .text(d.date)
-                        .attr('transform',`translate(${margin},${height/2})`)
+                        .attr('transform',`translate(${margin*2},${height/2})`)
                         .attr('alignment-baseline','middle')
                         .attr('font-size','3em');
 
-                    if(d.sleep){
+                    if(d.sleep && d.gotup){
                         cell.append('rect')
                             .attr('x',xScale(s2n(d.sleep,true)))
                             .attr('width',xScale(s2n(d.gotup))-xScale(s2n(d.sleep,true)))
                             .attr('y',height/4)
                             .attr('height',height/2)
                             .attr('fill','steelblue');
+                        cell.append('text')
+                            .attr('transform',`translate(${xScale(s2n(d.sleep,true))-margin/2},${height*.75+margin/2})`)
+                            .text(d.sleep)
+                            .attr('text-anchor','end')
+                            .attr('alignment-baseline','hanging')
+                            .attr('opacity',0.5);
+                        cell.append('text')
+                            .attr('transform',`translate(${xScale(s2n(d.gotup))+margin/2},${height*.75+margin/2})`)
+                            .text(d.gotup)
+                            .attr('alignment-baseline','hanging')
+                            .attr('opacity',0.5);
                             
                         cell.append('path')
-                            .attr('transform',`translate(850,${height/2})`)
+                            .attr('transform',`translate(850,${height/2+margin*.75})`)
                             .attr('d',arc(l))
                             .attr('fill',cScale(Math.max(Math.min(l,10),6)))
-                            // .attr('stroke','black')
-                            .attr('fill-opacity',0.7)
+                            .attr('fill-opacity',0.8);
+                        cell.append('text')
+                            .attr('transform',`translate(850,${margin/4})`)
+                            .text('睡眠 '+l.toFixed(2)+' 小时')
+                            .attr('font-size','0.9em')
+                            .attr('text-anchor','middle')
+                            .attr('alignment-baseline','hanging')
+                            .attr('opacity',0.5);
                     }else{
                         cell.append('rect')
                             .attr('x',0)
@@ -111,10 +126,7 @@
                             .attr('y',0)
                             .attr('height',height)
                             .attr('fill','gray')
-                            .attr('fill-opacity',0.5)
-
-                        // cell.select('text')
-                        //     .attr('fill','gray')
+                            .attr('fill-opacity',0.6);
                     }
 
                     if(d.wakeup){
@@ -130,32 +142,52 @@
                                     .attr('y2',height*3/4+margin/2)
                                     .attr('stroke','orange')
                                     .attr('stroke-width',margin/3);
+                                g.append('text')
+                                    .attr('transform',`translate(${xScale(s2n(e))},${height/4-margin*.75})`)
+                                    .text(e)
+                                    .attr('text-anchor','middle')
+                                    .attr('font-size','0.9em')
+                                    .attr('opacity',0.5);
 
                                 g.append('rect')
                                     .attr('x',900+margin*2)
                                     .attr('width',100-margin*4)
-                                    .attr('y',height*7/8-(i+1)*height/8)
+                                    .attr('y',height*15/16-(i+1)*height/8)
                                     .attr('height',height/8)
                                     .attr('fill',cScale(10-i))
-                                    // .attr('stroke','gray')
+                                    .attr('fill-opacity',0.8);
                             })
+                        cell.append('text')
+                            .attr('transform',`translate(950,${margin/4})`)
+                            .text('惊醒 '+d.wakeup.split(',').length+' 次')
+                            .attr('font-size','0.9em')
+                            .attr('text-anchor','middle')
+                            .attr('alignment-baseline','hanging')
+                            .attr('opacity',0.5);
                     }
                 });
 
+
+                function s2n(str,overnight){
+                    const arr=str.split(':');
+                    let num=+arr[0]+(+arr[1]/60)+(12-min);
+                    num=+arr[0]>max?num-12:num;
+
+                    return overnight && +arr[0]>8 && +arr[0]<=max?num-12:num;
+                }
+                function ShowComments(e,obj){
+                    d3.select('#comments')
+                        .html(obj.date+
+                            '<br>睡了 <b style="color:red;font-size:120%;">'+(obj.sleep && obj.gotup?(s2n(obj.gotup)-s2n(obj.sleep,true)).toFixed(2):' - ')+'</b> 小时：'+obj.sleep+' - '+obj.gotup+
+                            '<br>惊醒 <b style="color:red;font-size:120%;">'+(obj.wakeup?obj.wakeup.split(',').length:' - ')+'</b> 次：'+obj.wakeup.replaceAll(',','，')+
+                            '<br>随记：'+obj.comments);
+                }
+
         })
 
-        function s2n(str,overnight){
-            const arr=str.split(':');
-            let num=+arr[0]+(+arr[1]/60)+1;
-            num=+arr[0]>11?num-12:num;
+        
 
-            return overnight && +arr[0]==11?num-12:num;
-        }
-
-        function ShowComments(e,obj){
-            d3.select('#comments')
-                .html(obj.date+'<br>睡了<b style="color:red;">'+(obj.sleep?(s2n(obj.gotup)-s2n(obj.sleep,true)).toFixed(2):' - ')+'</b>小时：'+obj.sleep+' - '+obj.gotup+'<br>惊醒<b style="color:red;">'+(obj.wakeup?obj.wakeup.split(',').length:' - ')+'</b>次：'+obj.wakeup.replaceAll(',','，')+'<br>随记：'+obj.comments)
-        }
+        
     </script>
 </body>
 </html>
