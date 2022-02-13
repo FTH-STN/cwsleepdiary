@@ -19,22 +19,22 @@
             margin:auto;
             overflow-y: scroll;
         }
+        #title{
+            height:5vh;
+            font-size: 250%;
+            position: relative;
+            top:3vh;
+            border:none;
+        }
         #scrolllist{
             height:60vh;
             margin-top:5vh;
         }
         #comments{
-            height:25vh;
+            height:20vh;
             margin-top:3vh;
             padding:0.5vh;
         }
-        /* #frame{
-            position: absolute;
-            width:77.4%;
-            height:60vh;
-            margin:.7%;
-            border:solid 2px red;
-        } */
         .svgCell{
             width:98%;
             margin:1%;
@@ -43,6 +43,7 @@
     </style>
 </head>
 <body>
+    <div id="title">🦔宝贝的呼呼日记</div>
     <div id="scrolllist"></div>
     <div id="comments"></div>
     <script>
@@ -76,7 +77,6 @@
                     const cell = d3.select(this);
 
                     const l = s2n(d.gotup)-s2n(d.sleep,true);
-                    // const c = 
 
                     cell.append('text')
                         .text(w[new Date(d.date+' 2022').getDay()])
