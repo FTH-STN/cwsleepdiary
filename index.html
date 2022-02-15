@@ -52,10 +52,12 @@
     <div id="comments"></div>
     <script>
         const div=d3.select('#scrolllist');
-        const w=['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
+        const w=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+        const ww=['周日','周一','周二','周三','周四','周五','周六'];
 
 
         d3.csv('cw_sleep.csv').then(data=>{
+            data.forEach(d=>{d.w=new Date(d.date+' 2022').getDay()});
             console.log(data);
             
             const min = d3.min(data.filter(x=>+x.sleep.split(':')[0]>6),x=>+x.sleep.split(':')[0]);
@@ -83,7 +85,7 @@
                     const l = s2n(d.gotup)-s2n(d.sleep,true);
 
                     cell.append('text')
-                        .text(w[new Date(d.date+' 2022').getDay()])
+                        .text(w[d.w])
                         .attr('transform',`translate(${margin/2},${margin/2})`)
                         .attr('alignment-baseline','hanging');
                     cell.append('text')
@@ -187,7 +189,7 @@
                         svg.classed('selected',false);
                         d3.select(this).classed('selected',true);
                         d3.select('#comments')
-                            .html(obj.date+
+                            .html(obj.date+' '+ww[obj.w]+
                                 '<br>睡了 <b style="color:red;font-size:120%;">'+(obj.sleep && obj.gotup?(s2n(obj.gotup)-s2n(obj.sleep,true)).toFixed(2):' - ')+'</b> 小时：'+obj.sleep+' - '+obj.gotup+
                                 '<br>惊醒 <b style="color:red;font-size:120%;">'+(obj.wakeup?obj.wakeup.split(',').length:' - ')+'</b> 次：'+obj.wakeup.replaceAll(',','，')+
                                 '<br>随记：'+obj.comments);
