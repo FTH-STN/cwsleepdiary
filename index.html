@@ -40,6 +40,9 @@
             margin:1%;
             border:1px solid gray;
         }
+        .selected{
+            border: 2px solid orange;
+        }
     </style>
 </head>
 <body>
@@ -176,11 +179,18 @@
                     return overnight && +arr[0]>8 && +arr[0]<=max?num-12:num;
                 }
                 function ShowComments(e,obj){
-                    d3.select('#comments')
-                        .html(obj.date+
-                            '<br>睡了 <b style="color:red;font-size:120%;">'+(obj.sleep && obj.gotup?(s2n(obj.gotup)-s2n(obj.sleep,true)).toFixed(2):' - ')+'</b> 小时：'+obj.sleep+' - '+obj.gotup+
-                            '<br>惊醒 <b style="color:red;font-size:120%;">'+(obj.wakeup?obj.wakeup.split(',').length:' - ')+'</b> 次：'+obj.wakeup.replaceAll(',','，')+
-                            '<br>随记：'+obj.comments);
+                    if(d3.select(this).classed('selected')){
+                        svg.classed('selected',false);
+                        d3.select('#comments').html('');
+                    }else{
+                        svg.classed('selected',false);
+                        d3.select(this).classed('selected',true);
+                        d3.select('#comments')
+                            .html(obj.date+
+                                '<br>睡了 <b style="color:red;font-size:120%;">'+(obj.sleep && obj.gotup?(s2n(obj.gotup)-s2n(obj.sleep,true)).toFixed(2):' - ')+'</b> 小时：'+obj.sleep+' - '+obj.gotup+
+                                '<br>惊醒 <b style="color:red;font-size:120%;">'+(obj.wakeup?obj.wakeup.split(',').length:' - ')+'</b> 次：'+obj.wakeup.replaceAll(',','，')+
+                                '<br>随记：'+obj.comments);
+                    }
                 }
 
         })
